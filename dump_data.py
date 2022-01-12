@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+# %%
 
-# In[2]:
+# %%
 
 
 # HIDE CODE
@@ -65,12 +66,12 @@ def split_label(list_label):
     return list_label
 
 
-# In[ ]:
+# %%
 
 
 li_df_pv = []
 
-for end_date in pd.date_range('2021-09-01', '2021-10-01', freq='M'):
+for end_date in pd.date_range('2021-08-01', '2022-01-01', freq='M'):
    
     start_date = end_date.replace(day=1)
         
@@ -79,23 +80,48 @@ for end_date in pd.date_range('2021-09-01', '2021-10-01', freq='M'):
     print(start_date_str, end_date_str)
 
     q = '''
-    SELECT 
-        tc.TRO_MEMBERS, 
-        count(ame.AME_CART_PRODUCT_ID) AS COUNT_VIEW_PRODUCT
-    FROM 
-        TEMP_CHURN tc
-        LEFT JOIN PLMS_MEMBER_PROFILE pmp 
-        ON pmp.PMP_MEMBER_ID = tc.TRO_MEMBERS 
-        LEFT JOIN ALFAGIFT_MOE_EVENTS ame 
-        ON ame.AME_PONTA_ID = pmp.PMP_MEMBER_UNIQUE_ID 
-        LEFT JOIN ALFAGIFT_MASTER_PRODUCT amp 
-        ON amp.PRODUCT_ID = ame.AME_CART_PRODUCT_ID 
-    WHERE 
-        TRUNC(ame.AME_EVENT_TIME) BETWEEN '{}' AND '{}'
-        AND ame.AME_EVENT_NAME = 'view_product'
-    GROUP BY tc.TRO_MEMBERS
+        SELECT 
+            att.ATT_ORDER_ID, 
+            att.ATT_ORDER_DATE, 
+            att.ATT_DELIVERY_DATE, 
+            att.ATT_SEND_DATE_TOSTORE,  
+            ( att.ATT_DELIVERY_DATE - att.ATT_SEND_DATE_TOSTORE ) * 24 * 60 AS SLA,
+            CASE 
+                WHEN (TO_NUMBER(TO_CHAR( ATT_SEND_DATE_TOSTORE, 'HH24')) > 20) 
+                    THEN (att.ATT_DELIVERY_DATE - (TRUNC(ATT_SEND_DATE_TOSTORE) + 1 + 8/24))  * 24 * 60
+                WHEN (TO_NUMBER(TO_CHAR( ATT_SEND_DATE_TOSTORE, 'HH24')) < 7) 
+                    THEN (att.ATT_DELIVERY_DATE - (TRUNC(ATT_SEND_DATE_TOSTORE) + 8/24))  * 24 * 60
+                ELSE ( att.ATT_DELIVERY_DATE - att.ATT_SEND_DATE_TOSTORE ) * 24 * 60
+            END AS SLA_NORM
+        FROM 
+            ALFAGIFT_TIME_TRX att 
+        WHERE 
+            TRUNC(ATT_ORDER_DATE) BETWEEN '{}' AND '{}'
+        ORDER BY 
+            TRUNC(ATT_ORDER_DATE) ASC
 
     '''.format(start_date_str, end_date_str)
+    
+#     q = '''
+#     SELECT 
+#         tc.TRO_MEMBERS, 
+#         count(ame.AME_CART_PRODUCT_ID) AS COUNT_VIEW_PRODUCT
+#     FROM 
+#         TEMP_CHURN tc
+#         LEFT JOIN PLMS_MEMBER_PROFILE pmp 
+#         ON pmp.PMP_MEMBER_ID = tc.TRO_MEMBERS 
+#         LEFT JOIN ALFAGIFT_MOE_EVENTS ame 
+#         ON ame.AME_PONTA_ID = pmp.PMP_MEMBER_UNIQUE_ID 
+#         LEFT JOIN ALFAGIFT_MASTER_PRODUCT amp 
+#         ON amp.PRODUCT_ID = ame.AME_CART_PRODUCT_ID 
+#     WHERE 
+#         TRUNC(ame.AME_EVENT_TIME) BETWEEN '{}' AND '{}'
+#         AND ame.AME_EVENT_NAME = 'view_product'
+#     GROUP BY tc.TRO_MEMBERS
+
+#     '''.format(start_date_str, end_date_str)
+
+
     con = ds_db.connect_alfabi()
     df_pv = pd.read_sql_query(q, con)
     con.close()
@@ -104,25 +130,25 @@ for end_date in pd.date_range('2021-09-01', '2021-10-01', freq='M'):
 df_pv = pd.concat(li_df_pv)
 
 
-# In[ ]:
+# %%
 
 
 
 
 
-# In[7]:
+# %%
 
 
-df_pv.to_csv('/home/server/gli-data-science/akhiyar/churn/pv_{}.csv'.format(start_date_str), index=False)
+df_pv.to_csv('/home/server/gli-data-science/akhiyar/churn/sla_{}.csv'.format(start_date_str), index=False)
 
 
-# In[ ]:
+# %%
 
 
 
 
 
-# In[ ]:
+# %%
 
 
 
