@@ -68,11 +68,11 @@ def split_label(list_label):
 
 # %%
 li_df_pv = []
-prefix = 'sla'
+prefix = 'rating'
 
 
 if prefix in ['pv', 'sla']:
-    for end_date in pd.date_range('2021-08-01', '2022-01-01', freq='M'):
+    for end_date in pd.date_range('2021-12-01', '2022-04-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
@@ -137,25 +137,23 @@ if prefix in ['pv', 'sla']:
 
     df_pv = pd.concat(li_df_pv)
 
-    df_pv.to_csv('/home/server/gli-data-science/akhiyar/churn/{}_{}.csv'.format(prefix, end_date_str), index=False)
+    df_pv.to_csv('/home/server/gli-data-science/akhiyar/churn/feature/{}_{}.csv'.format(prefix, end_date_str), index=False)
 
 
 # %%
 
 # %%
 
-
 # %%
 
 
-
-
+# %%
 
 # %%
 if prefix == 'rating':
 
     li_re = []
-    for end_date in pd.date_range('2021-08-01', '2022-01-01', freq='M'):
+    for end_date in pd.date_range('2021-12-01', '2022-04-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
@@ -196,8 +194,14 @@ if prefix == 'rating':
     df_re_g_u = df_re_g.unstack(level=1).fillna(0).reset_index()
     df_re_g_u.columns = [' '.join(col).strip().upper() for col in df_re_g_u.columns.values]
     
-    df_re_g_u.to_csv('/home/server/gli-data-science/akhiyar/churn/rating_{}.csv'.format(end_date_str), index=False)
+    df_re_g_u.to_csv('/home/server/gli-data-science/akhiyar/churn/feature/rating_{}.csv'.format(end_date_str), index=False)
 
+
+# %%
+
+# %%
+
+# %%
 
 # %%
 
