@@ -68,11 +68,11 @@ def split_label(list_label):
 
 # %%
 li_df_pv = []
-prefix = 'rating'
+prefix = 'pv'
 
 
 if prefix in ['pv', 'sla']:
-    for end_date in pd.date_range('2021-12-01', '2022-04-01', freq='M'):
+    for end_date in pd.date_range('2022-01-01', '2022-05-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
@@ -153,7 +153,7 @@ if prefix in ['pv', 'sla']:
 if prefix == 'rating':
 
     li_re = []
-    for end_date in pd.date_range('2021-12-01', '2022-04-01', freq='M'):
+    for end_date in pd.date_range('2022-01-01', '2022-05-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
