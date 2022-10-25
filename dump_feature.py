@@ -53,7 +53,7 @@ def side_by_side_display(dfs:list, captions:list):
 
     display(HTML(output))
 
-from sklearn.linear_model import LinearRegression, PoissonRegressor, Ridge, Lasso, RANSACRegressor
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, RANSACRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor, export_text
 from sklearn.model_selection import cross_val_score
@@ -67,12 +67,23 @@ def split_label(list_label):
 
 
 # %%
+#     for end_date in pd.date_range('2022-06-01', '2022-10-01', freq='M'):
+
+#         start_date = end_date.replace(day=1)
+
+#         start_date_str = start_date.strftime('%d%b%y')
+#         end_date_str = end_date.strftime('%d%b%y')
+#         print(start_date_str, end_date_str)
+
+# %%
+
+# %%
 li_df_pv = []
-prefix = 'pv'
+prefix = 'rating'
 
 
 if prefix in ['pv', 'sla']:
-    for end_date in pd.date_range('2022-01-01', '2022-05-01', freq='M'):
+    for end_date in pd.date_range('2022-06-01', '2022-10-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
@@ -109,13 +120,13 @@ if prefix in ['pv', 'sla']:
         elif prefix == 'pv':
             q = '''
                 SELECT 
-                    tc.TRO_MEMBERS, 
+                    tc.TRO_PONTA_ID, 
                     TRUNC(ame.AME_EVENT_TIME, 'MONTH') AS EVENT_TIME,
                     count(ame.AME_CART_PRODUCT_ID) AS COUNT_VIEW_PRODUCT
                 FROM 
                     TEMP_CHURN tc
                     LEFT JOIN PLMS_MEMBER_PROFILE pmp 
-                    ON pmp.PMP_MEMBER_ID = tc.TRO_MEMBERS 
+                    ON pmp.PMP_MEMBER_ID = tc.TRO_PONTA_ID 
                     LEFT JOIN ALFAGIFT_MOE_EVENTS ame 
                     ON ame.AME_PONTA_ID = pmp.PMP_MEMBER_UNIQUE_ID 
                     LEFT JOIN ALFAGIFT_MASTER_PRODUCT amp 
@@ -123,7 +134,9 @@ if prefix in ['pv', 'sla']:
                 WHERE 
                     TRUNC(ame.AME_EVENT_TIME) BETWEEN '{}' AND '{}'
                     AND ame.AME_EVENT_NAME = 'view_product'
-                GROUP BY tc.TRO_MEMBERS, TRUNC(ame.AME_EVENT_TIME, 'MONTH')
+                GROUP BY 
+                    tc.TRO_PONTA_ID, 
+                    TRUNC(ame.AME_EVENT_TIME, 'MONTH')
 
             '''.format(start_date_str, end_date_str)
 
@@ -135,9 +148,13 @@ if prefix in ['pv', 'sla']:
         con.close()
         li_df_pv.append(df_pv)
 
+        
     df_pv = pd.concat(li_df_pv)
 
-    df_pv.to_csv('/home/server/gli-data-science/akhiyar/churn/feature/{}_{}.csv'.format(prefix, end_date_str), index=False)
+    df_pv.to_parquet(
+        '/home/server/gli-data-science/akhiyar/churn/feature/{}_{}'.format(prefix, end_date_str)
+        , index=False
+    )
 
 
 # %%
@@ -153,7 +170,7 @@ if prefix in ['pv', 'sla']:
 if prefix == 'rating':
 
     li_re = []
-    for end_date in pd.date_range('2022-01-01', '2022-05-01', freq='M'):
+    for end_date in pd.date_range('2022-06-01', '2022-10-01', freq='M'):
 
         start_date = end_date.replace(day=1)
 
@@ -194,7 +211,11 @@ if prefix == 'rating':
     df_re_g_u = df_re_g.unstack(level=1).fillna(0).reset_index()
     df_re_g_u.columns = [' '.join(col).strip().upper() for col in df_re_g_u.columns.values]
     
-    df_re_g_u.to_csv('/home/server/gli-data-science/akhiyar/churn/feature/rating_{}.csv'.format(end_date_str), index=False)
+    
+    df_re_g_u.to_parquet(
+        '/home/server/gli-data-science/akhiyar/churn/feature/rating_{}'.format(end_date_str),
+        index=False
+    )
 
 
 # %%
